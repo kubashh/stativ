@@ -1,13 +1,12 @@
 import * as CSS from "csstype";
-import { createHtmlElement } from "./createHtmlElement";
-export * as elements from "./elements";
+import { component } from "./createElement";
+import * as elements from "./elements";
 
-export function hydrate(htmlElement: HTMLElement, node: Stativ.Element) {
-  const element = createHtmlElement(node);
-  if (typeof element === `string`) {
-    htmlElement.innerText += element;
+export function hydrate(htmlElement: HTMLElement, node: Stativ.Node) {
+  if (typeof node !== `string`) {
+    htmlElement.appendChild(node.element!);
   } else {
-    htmlElement.appendChild(element);
+    htmlElement.innerText += node;
   }
 }
 
@@ -15,17 +14,10 @@ export function createSignal<T>(defaultValue: T, fn?: Listener): Signal<T> {
   let value = defaultValue;
   const listeners = new Set<Listener>(fn ? [fn] : undefined);
 
-  function get() {
-    return value;
-  }
-
-  function subscribe(listener: Listener) {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  }
-
   return {
-    get,
+    get() {
+      return value;
+    },
 
     set(newValueOrFn) {
       const newValue =
@@ -37,10 +29,9 @@ export function createSignal<T>(defaultValue: T, fn?: Listener): Signal<T> {
       listeners.forEach((l) => l());
     },
 
-    subscribe,
-
-    use() {
-      return this.get();
+    subscribe(listener: Listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
   };
 }
@@ -49,19 +40,31 @@ export type Signal<T> = {
   get(): T;
   set(newValueOrFn: T | ((prev: T) => T)): void;
   subscribe(listener: Listener): () => void;
-  use(): T;
 };
 
 declare global {
   namespace Stativ {
     // StativElement
-    type Element = [name: string, props: ElemetProps, ...children: Stativ.Element[]] | string;
+    type Element = {
+      type: string | `fragment`;
+      element?: HTMLElement;
+      textContent?: string;
+
+      props: Stativ.FinalElementProps;
+      children?: Stativ.Node[];
+
+      signals?: Signal<any>[]; // For rerendering component if signal value changed
+      parent?: Stativ.Element;
+    };
+
+    type Node = Stativ.Element | string;
 
     // StativElementProps
     type ElemetProps = {
       // Stativ-specific Attributes
       defaultChecked?: boolean; // input
-      defaultValue?: string | number | readonly string[]; // input
+      defaultValue?: string; // input
+      signals?: Signal<any>[];
 
       // Stativ Events
       onClick?: (e: MouseEvent) => void;
@@ -69,7 +72,7 @@ declare global {
 
       // Standard HTML Attributes
       accessKey?: string;
-      className?: string;
+      className?: Stativ.ClassValue[] | string;
       dir?: string;
       draggable?: Booleanish;
       enterKeyHint?: `enter` | `done` | `go` | `next` | `previous` | `search` | `send`;
@@ -78,7 +81,7 @@ declare global {
       lang?: string;
       nonce?: string;
       slot?: string;
-      style?: CSSProperties;
+      style?: Stativ.CSSProperties;
       tabIndex?: number;
       title?: string;
       translate?: `yes` | `no`;
@@ -136,41 +139,19 @@ declare global {
        */
       part?: string; // Web components
     };
-  }
 
-  type CSSProperties = CSS.Properties<string | number>;
+    type FinalElementProps = Stativ.ElemetProps & { type: string; children: Stativ.Node[] };
+
+    type CSSProperties = CSS.Properties<string | number>;
+    type ClassValue = Stativ.ClassValue[] | string | number | null | boolean | undefined;
+  }
 }
 
 type Booleanish = boolean | `true` | `false`;
 
 type Listener = () => void;
 
-// interface BaseSyntheticEvent<E = object, C = any, T = any> {
-//   nativeEvent: E;
-//   currentTarget: C;
-//   target: T;
-//   bubbles: boolean;
-//   cancelable: boolean;
-//   defaultPrevented: boolean;
-//   eventPhase: number;
-//   isTrusted: boolean;
-//   preventDefault(): void;
-//   isDefaultPrevented(): boolean;
-//   stopPropagation(): void;
-//   isPropagationStopped(): boolean;
-//   persist(): void;
-//   timeStamp: number;
-//   type: string;
-// }
-
-// interface SyntheticEvent<T = Element, E = Event> extends BaseSyntheticEvent<
-//   E,
-//   EventTarget & T,
-//   EventTarget
-// > {}
-
-// interface ChangeEvent<CurrentTarget = Element> extends SyntheticEvent<CurrentTarget> {
-//   // TODO: This is wrong for change event handlers on arbitrary. Should
-//   // be EventTarget & Target, but kept for backward compatibility until React 20.
-//   target: EventTarget & CurrentTarget;
-// }
+export default {
+  ...elements,
+  component,
+};

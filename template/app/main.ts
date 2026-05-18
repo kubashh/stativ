@@ -1,36 +1,43 @@
 /// <reference path="../../index.d.ts" />
-import { hydrate, createSignal } from "../../src/main";
+import Stativ, { hydrate, createSignal } from "../../src/main";
 
 const signal = createSignal(0);
-console.log(signal);
 
 hydrate(document.body, App());
 
-function App(): Stativ.Element {
-  signal.subscribe(Component);
-  return [`div`, {}, `hello`, Component()];
+function App(): Stativ.Node {
+  const component = Component();
+  console.log(`Comp`, component);
+  return Stativ.div({}, `hello`, component);
 }
 
-function Component(): Stativ.Element {
-  // signal.subscribe(Component.bind(this));
-
-  function sth() {
-    signal.set((prev) => prev + 1);
-    console.log(signal.get());
-  }
-  // signal.subscribe(sth);
-  return [
-    `div`,
+function Component(): Stativ.Node {
+  return Stativ.div(
     {
       style: {
-        cursor: `pointer`,
-        marginInline: `20px`,
-        marginBlock: `10px`,
+        marginInline: `24px`,
+        marginBlock: `12px`,
       },
-      onClick: sth,
+      className: `test`,
+      onClick: () => {
+        signal.set((prev) => prev + 1);
+        console.log(signal.get());
+      },
     },
-    String(signal.get()),
-    [`div`, {}, `bbb`],
-    // `ccc`,
-  ];
+    Counter(),
+    Stativ.div({}, `bbb`),
+    `ccc`,
+    Stativ.div({}, `ddd`),
+    `ccc`,
+  );
+}
+
+function Counter() {
+  return Stativ.div(
+    {
+      style: { cursor: `pointer`, marginBlock: `12px`, fontSize: `24px` },
+      signals: [signal],
+    },
+    `Count: ${signal.get()}`,
+  );
 }

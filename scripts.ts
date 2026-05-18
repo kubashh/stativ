@@ -57,7 +57,7 @@ async function build({ isPublish = false, isClear = false, emitTypes = false }: 
 }
 
 async function buildElements() {
-  const keys = [
+  const types = [
     `a`,
     `abbr`,
     `address`,
@@ -155,10 +155,10 @@ async function buildElements() {
     `wbr`,
   ];
 
-  let buf = ``;
-  for (const key of keys) {
-    buf += `export function ${key}(props: Stativ.ElemetProps, ...children: Stativ.Element[]): Stativ.Element {
-  return ["${key}", props, ...children];
+  let buf = `import { createElement } from "./createElement"\n\n`;
+  for (const type of types) {
+    buf += `export function ${type}(props: Stativ.ElemetProps, ...children: Stativ.Node[]): Stativ.Node {
+  return createElement({ ...props, type: "${type}", children });
 }\n\n`;
   }
 
