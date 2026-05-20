@@ -1,18 +1,20 @@
 # Stativ
 
-Frontend library for ts JS/TS non-xml
+Frontend library for JS/TS non-xml fast web apps
 
-## TODO
+## Usage
 
 ```ts
-import { hydrate } from "stativ";
+import Stativ, { hydrate } from "stativ";
 
-hydrate(document.body, App);
+hydrate(document.body, App());
 
 function App() {
-  return [`div`, {}, [`div`, {}, `Hello!`]];
+  // same as react <div><div>Hello!</div</div>
+  return Stativ.div({}, Stativ.div({}, `Hello!`));
 }
 ```
 
-- createHtmlElement must return HTMLElement or object with it and effect...
+## TODO
+
 - Implement tw like

@@ -1,9 +1,9 @@
 {
   "name": "stativ",
-  "version": "0.0.1",
+  "version": "0.0.2-dev.0",
   "scripts": {
-    "dev": "bun run build && bun scripts.ts dev",
-    "build": "bun scripts.ts build"
+    "dev": "bun run build --stativ-dev && bun scripts.ts dev",
+    "build": "bun scripts.ts build --stativ-dev"
   },
   "files": [
     "./index.js",

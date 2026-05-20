@@ -1,63 +1,39 @@
 import * as CSS from "csstype";
-import { component } from "./createElement";
+import { element, frag } from "./createElement";
 import * as elements from "./elements";
+import { cli } from "./cli";
+import { createSignal, type Signal } from "./signal";
+
+if (typeof process !== `undefined` && !process.argv.includes(`--stativ-dev`)) {
+  await cli();
+}
 
 export function hydrate(htmlElement: HTMLElement, node: Stativ.Node) {
   if (typeof node !== `string`) {
-    htmlElement.appendChild(node.element!);
+    htmlElement.appendChild(node instanceof Text ? node : node.element!);
   } else {
     htmlElement.innerText += node;
   }
 }
 
-export function createSignal<T>(defaultValue: T, fn?: Listener): Signal<T> {
-  let value = defaultValue;
-  const listeners = new Set<Listener>(fn ? [fn] : undefined);
-
-  return {
-    get() {
-      return value;
-    },
-
-    set(newValueOrFn) {
-      const newValue =
-        typeof newValueOrFn === `function` ? (newValueOrFn as (prev: T) => T)(value) : newValueOrFn;
-
-      if (Object.is(value, newValue)) return;
-
-      value = newValue;
-      listeners.forEach((l) => l());
-    },
-
-    subscribe(listener: Listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-  };
-}
-
-export type Signal<T> = {
-  get(): T;
-  set(newValueOrFn: T | ((prev: T) => T)): void;
-  subscribe(listener: Listener): () => void;
-};
-
 declare global {
   namespace Stativ {
     // StativElement
-    type Element = {
-      type: string | `fragment`;
-      element?: HTMLElement;
-      textContent?: string;
+    type Element =
+      | {
+          type: string;
+          element?: HTMLElement;
+          textContent?: string;
 
-      props: Stativ.FinalElementProps;
-      children?: Stativ.Node[];
+          props: Stativ.FinalElementProps;
+          children?: Stativ.Node[];
 
-      signals?: Signal<any>[]; // For rerendering component if signal value changed
-      parent?: Stativ.Element;
-    };
+          signals?: Signal<any>[]; // For rerendering component if signal value changed
+          parent?: Stativ.Element;
+        }
+      | Stativ.Fragment;
 
-    type Node = Stativ.Element | string;
+    type Node = Stativ.Element | Text | string;
 
     // StativElementProps
     type ElemetProps = {
@@ -140,7 +116,17 @@ declare global {
       part?: string; // Web components
     };
 
-    type FinalElementProps = Stativ.ElemetProps & { type: string; children: Stativ.Node[] };
+    // Stativ Fragment
+    type Fragment = {
+      type: `fragment`;
+      element: DocumentFragment;
+      props: Stativ.FinalElementProps;
+      children?: Stativ.Node[];
+      parent?: Stativ.Element;
+      signals?: Signal<any>[];
+    };
+
+    type FinalElementProps = (Stativ.ElemetProps & { type: string; children: Stativ.Node[] }) | string;
 
     type CSSProperties = CSS.Properties<string | number>;
     type ClassValue = Stativ.ClassValue[] | string | number | null | boolean | undefined;
@@ -149,9 +135,10 @@ declare global {
 
 type Booleanish = boolean | `true` | `false`;
 
-type Listener = () => void;
-
 export default {
   ...elements,
-  component,
+  element,
+  frag,
 };
+
+export { createSignal, type Signal };

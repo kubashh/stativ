@@ -1,13 +1,22 @@
 /// <reference path="../../index.d.ts" />
-import Stativ, { hydrate, createSignal } from "../../src/main";
+import Stativ, { hydrate, createSignal, type Signal } from "../../src/main";
 
-const signal = createSignal(0);
+const testProps = { style: { cursor: `pointer`, marginBlock: `12px`, fontSize: `24px` } };
+
+const numberSignal = createSignal(0);
+const strSignal = createSignal(`a`);
+const booleanSignal = createSignal(true);
+const arrSignal = createSignal<Signal<number>[]>([createSignal(Math.floor(Math.random() * 10))]);
+arrSignal.subscribe(() => {
+  const arr = arrSignal.get();
+  console.log(arr);
+});
 
 hydrate(document.body, App());
 
 function App(): Stativ.Node {
   const component = Component();
-  console.log(`Comp`, component);
+  // console.log(`Comp`, component);
   return Stativ.div({}, `hello`, component);
 }
 
@@ -19,25 +28,63 @@ function Component(): Stativ.Node {
         marginBlock: `12px`,
       },
       className: `test`,
-      onClick: () => {
-        signal.set((prev) => prev + 1);
-        console.log(signal.get());
-      },
     },
     Counter(),
-    Stativ.div({}, `bbb`),
-    `ccc`,
-    Stativ.div({}, `ddd`),
-    `ccc`,
+    StringText(),
+    BooleanTest(),
+    ArrayTest(),
   );
 }
 
 function Counter() {
   return Stativ.div(
     {
-      style: { cursor: `pointer`, marginBlock: `12px`, fontSize: `24px` },
-      signals: [signal],
+      ...testProps,
+      onClick: () => {
+        numberSignal.set((prev) => prev + 1);
+      },
     },
-    `Count: ${signal.get()}`,
+    ...[`Number: `, numberSignal.use()],
+  );
+}
+
+function StringText() {
+  return Stativ.div(
+    {
+      ...testProps,
+      onClick: () => {
+        strSignal.set((prev) => prev + String(Math.floor(Math.random() * 10)));
+      },
+    },
+    ...[`String: `, strSignal.use()],
+  );
+}
+
+function BooleanTest() {
+  return Stativ.div(
+    {
+      ...testProps,
+      onClick: () => {
+        booleanSignal.set((prev) => !prev);
+      },
+    },
+    ...[`Boolean: `, booleanSignal.use()],
+  );
+}
+
+function ArrayTest() {
+  return Stativ.div(
+    {
+      ...testProps,
+      onClick: () => {
+        arrSignal.set((prev) => [...prev, createSignal(Math.floor(Math.random() * 10))]);
+      },
+      signals: [arrSignal],
+    },
+    `Count2: `,
+    Stativ.frag({
+      signals: [],
+    }),
+    ...arrSignal.get().map((num) => num.use()),
   );
 }

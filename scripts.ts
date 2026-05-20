@@ -1,12 +1,15 @@
-import indexHtml from "./template/app/index.html";
+import { dev } from "./src/dev/dev";
 
 const mainPath = `./src/main.ts`;
 
 if (process.argv[2] === `dev`) {
   if (process.argv.includes(`--build`)) {
-    await Bun.$`cd template && bun run build`;
+    await Bun.$`cd template && bun run build --stativ-dev`;
   } else {
-    await dev();
+    const indexHtml = await import("./template/app/index.html");
+    await dev({
+      entry: indexHtml.default,
+    });
   }
 } else if (process.argv[2] === `build`) {
   if (process.argv.includes(`--elements`)) {
@@ -17,17 +20,6 @@ if (process.argv[2] === `dev`) {
       isClear: process.argv.includes(`--clear`),
     });
   }
-}
-
-async function dev() {
-  // await build({});
-  const { url } = Bun.serve({
-    routes: {
-      "/": indexHtml,
-    },
-  });
-
-  console.log(`> Server running at ${url}`);
 }
 
 async function build({ isPublish = false, isClear = false, emitTypes = false }: ScriptsBuildProps) {
