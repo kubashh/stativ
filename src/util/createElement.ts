@@ -1,8 +1,10 @@
+// Any element, like var that cannot be exported
 export function element(type: string, props: Stativ.ElemetProps, ...children: Stativ.Node[]) {
   return createElement({ ...props, type, children });
 }
 
-export function frag(props: Stativ.ElemetProps, ...children: Stativ.Node[]) {
+// Fragment
+export function frag(props: Stativ.FragmentProps, ...children: Stativ.Node[]) {
   return createElement({
     ...props,
     type: `fragment`,
@@ -10,44 +12,25 @@ export function frag(props: Stativ.ElemetProps, ...children: Stativ.Node[]) {
   });
 }
 
-export function createElement(seprops: Stativ.FinalElementProps): Stativ.Node {
+export function createElement(seprops: Stativ.CreateElementProps): Stativ.Node {
   if (typeof seprops === `string`) return document.createTextNode(seprops);
   if (seprops.type === `fragment`) {
     const node: Stativ.Fragment = {
       type: seprops.type,
       props: seprops,
-      signals: seprops.signals,
-      parent: undefined,
-      children: undefined,
-      element: document.createDocumentFragment(),
+      signals: seprops.signals || null,
+      parent: null,
+      children: null,
+      element: document.createElement(`div`), // TODO create fake document fragment
     };
     node.children = seprops.children.map((child) => {
-      if (child instanceof Text) {
-        element.appendChild(child);
-      } else if (typeof child === `string`) {
-        element.appendChild(document.createTextNode(child));
-      } else {
+      if (!(child instanceof Text) && typeof child !== `string`) {
         child.parent = node;
-        element.appendChild(child.element!);
       }
+      node.element.appendChild(getElement(child)!);
       return child;
     });
     return node;
-    // {
-    //   type: seprops.type,
-    //   element,
-    //   children: seprops.children.map((child) => {
-    //     if (child instanceof Text) {
-    //       element.appendChild(child);
-    //     } else if (typeof child === `string`) {
-    //       element.appendChild(document.createTextNode(child));
-    //     } else {
-    //       child.parent = node!;
-    //       element.appendChild(child.element!);
-    //     }
-    //     return child;
-    //   }),
-    // };
   }
 
   const {
@@ -63,26 +46,29 @@ export function createElement(seprops: Stativ.FinalElementProps): Stativ.Node {
     ...props
   } = seprops;
 
-  const element = document.createElement(type, props);
+  const element = document.createElement(type);
   if (className !== undefined) {
     element.className = typeof className === `string` ? className : clsx(className);
   }
+  Object.assign(element, props);
   Object.assign(element.style, style);
 
-  if (defaultChecked) console.error(`defaultChecked not implemented yet!`);
+  if (defaultChecked) {
+    (element as HTMLInputElement).checked = defaultChecked;
+    throw new Error(`defaultChecked not implemented yet!`);
+  }
   if (defaultValue) {
-    console.error(`defaultValue not implemented yet!`);
-    element.nodeValue = defaultValue;
+    (element as HTMLInputElement).value = defaultValue;
+    throw new Error(`defaultValue not implemented yet!`);
   }
 
   const node: Stativ.Node = {
     type,
     element,
-    textContent: undefined,
     props: seprops,
     children,
-    signals: signals,
-    parent: undefined,
+    signals: seprops.signals || null,
+    parent: null,
   };
 
   // abort, animationcancel, animationend...
@@ -91,14 +77,10 @@ export function createElement(seprops: Stativ.FinalElementProps): Stativ.Node {
 
   if (children) {
     for (const child of children) {
-      if (child instanceof Text) {
-        element.appendChild(child);
-      } else if (typeof child === `string`) {
-        element.appendChild(document.createTextNode(child));
-      } else {
+      if (!(child instanceof Text) && typeof child !== `string`) {
         child.parent = node;
-        element.appendChild(child.element!);
       }
+      element.appendChild(getElement(child)!);
     }
   }
 
@@ -119,6 +101,12 @@ function clsx(inputs: Stativ.ClassValue[]) {
   }
 
   return str;
+}
+
+export function getElement(node?: Stativ.Node): HTMLElement | Text | null {
+  if (typeof node === `string`) return document.createTextNode(node);
+  if (node instanceof Text) return node;
+  return node?.element || null;
 }
 
 // const eventNames = [

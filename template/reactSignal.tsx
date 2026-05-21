@@ -1,9 +1,17 @@
-const arrSignal = signal<number[]>([1, 2, 3, 4]);
+const objSignal = signal<{ [key: string]: number }>({ name: `John Doe`, age: 30, city: `New York` });
 
-setTimeout(() => arrSignal.set((prev) => [...prev, 5]), 1000);
+setTimeout(() => objSignal.set((prev) => ({ ...prev, d: 7 })), 1000);
 
 export default function App() {
-  return arrSignal.use().map((num) => <p>{num}</p>);
+  const obj = objSignal.use();
+
+  return (
+    <div>
+      <p>Name: {object.name}</p>
+      <p>Age: {object.age}</p>
+      <p>City: {object.city}</p>
+    </div>
+  );
 }
 
 declare function signal<T>(def: T): {

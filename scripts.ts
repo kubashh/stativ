@@ -46,6 +46,15 @@ async function build({ isPublish = false, isClear = false, emitTypes = false }: 
       `--ignoreConfig`,
     ]).exited,
   ]);
+
+  // Add module declarations: css, svg
+  const str = await Bun.file(`./index.d.ts`).text();
+  const typesDeclaration = `declare module "*.css" {}
+declare module "*.svg" {
+    export default string;
+}`;
+
+  await Bun.write(`./index.d.ts`, `${typesDeclaration}${str}`);
 }
 
 async function buildElements() {
@@ -154,7 +163,7 @@ async function buildElements() {
 }\n\n`;
   }
 
-  await Bun.write(`./src/elements.ts`, buf.slice(0, -1));
+  await Bun.write(`./src/util/elements.ts`, buf.slice(0, -1));
 }
 
 type ScriptsBuildProps = {

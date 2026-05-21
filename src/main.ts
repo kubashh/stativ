@@ -1,8 +1,8 @@
 import * as CSS from "csstype";
-import { element, frag } from "./createElement";
-import * as elements from "./elements";
+import { element, frag } from "./util/createElement";
+import * as elements from "./util/elements";
 import { cli } from "./cli";
-import { createSignal, type Signal } from "./signal";
+import { createSignal, type Signal } from "./util/signal";
 
 if (typeof process !== `undefined` && !process.argv.includes(`--stativ-dev`)) {
   await cli();
@@ -22,21 +22,20 @@ declare global {
     type Element =
       | {
           type: string;
-          element?: HTMLElement;
-          textContent?: string;
+          element: HTMLElement;
 
-          props: Stativ.FinalElementProps;
-          children?: Stativ.Node[];
+          props: Stativ.CreateElementProps;
+          children: Stativ.Node[] | null;
 
-          signals?: Signal<any>[]; // For rerendering component if signal value changed
-          parent?: Stativ.Element;
+          signals: Signal<any>[] | null; // For rerendering component if signal value changed
+          parent: Stativ.Element | null;
         }
       | Stativ.Fragment;
 
     type Node = Stativ.Element | Text | string;
 
     // StativElementProps
-    type ElemetProps = {
+    type ElemetProps<T = HTMLElement> = {
       // Stativ-specific Attributes
       defaultChecked?: boolean; // input
       defaultValue?: string; // input
@@ -119,14 +118,18 @@ declare global {
     // Stativ Fragment
     type Fragment = {
       type: `fragment`;
-      element: DocumentFragment;
-      props: Stativ.FinalElementProps;
-      children?: Stativ.Node[];
-      parent?: Stativ.Element;
+      element: HTMLElement;
+      props: Stativ.CreateElementProps;
+      children: Stativ.Node[] | null;
+      parent: Stativ.Element | null;
+      signals: Signal<any>[] | null;
+    };
+
+    type FragmentProps = {
       signals?: Signal<any>[];
     };
 
-    type FinalElementProps = (Stativ.ElemetProps & { type: string; children: Stativ.Node[] }) | string;
+    type CreateElementProps = (Stativ.ElemetProps & { type: string; children: Stativ.Node[] }) | string;
 
     type CSSProperties = CSS.Properties<string | number>;
     type ClassValue = Stativ.ClassValue[] | string | number | null | boolean | undefined;
